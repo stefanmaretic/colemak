@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Grid } from "@chakra-ui/core";
+import { Box, Grid, Textarea } from "@chakra-ui/core";
 import { Key } from "./Key";
 import { Row } from "./Row";
 
@@ -77,20 +77,66 @@ const qwertyLayout = [
   ],
 ];
 
+const initState = new Set();
+
+function reducer(state, action) {
+  switch (action.type) {
+    case "keydown":
+      state.add(action.payload);
+      return state;
+    case "keyup":
+      state.delete(action.payload);
+      return state;
+    default:
+      return state;
+  }
+}
+
 export function Keyboard() {
+  const [state, dispatch] = React.useReducer(reducer, initState);
+
   React.useEffect(() => {
-    const keypressListener = window.addEventListener("keypress", (evt) =>
-      console.log(evt.keyCode)
-    );
-    return () => window.removeEventListener(keypressListener);
+    const keydown = window.addEventListener("keydown", (evt) => {
+      dispatch({ type: "keydown", payload: evt.keyCode });
+    });
+    const keyup = window.addEventListener("keyup", (evt) => {
+      dispatch({ type: "keyup", payload: evt.keyCode });
+    });
+    return () => {
+      window.removeEventListener("keydown", keydown);
+      window.removeEventListener("keyup", keyup);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    console.log(state);
   });
+
   return (
     <Grid minH="100vh">
-      <Box mx="auto" mt="auto" mb="2rem">
+      <Box mx="auto" mt="2rem">
+        <Textarea
+          w="1000px"
+          h="360px"
+          px="0.575rem"
+          fontSize="1.5rem"
+          border="1px solid #323"
+          boxSizing="border-box"
+          mb="auto"
+          borderRadius="3px"
+          resize="none"
+        />
+      </Box>
+      <Box mx="auto">
         {qwertyLayout.map((row, idx) => (
           <Row mb="3px" key={idx}>
-            {row.map(({ keys, keyCodes, ...props }) => (
-              <Key key={keys[0]} keys={keys} keyCodes={keyCodes} {...props} />
+            {row.map(({ keys, keyCodes, ...props }, idx) => (
+              <Key
+                key={keys[0] + idx}
+                keys={keys}
+                keyCodes={keyCodes}
+                {...props}
+              />
             ))}
           </Row>
         ))}
